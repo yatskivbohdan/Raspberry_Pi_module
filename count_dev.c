@@ -37,8 +37,8 @@ static int chardev_release(struct inode *i, struct file *f)
 static ssize_t chardev_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 {
 	uint8_t data[4];
-	memcpy(data, &count ,sizeof(unsigned int));
-	if (copy_to_user(buf, data, count)) {
+	memcpy(data, &press_count ,sizeof(unsigned int));
+	if (copy_to_user(buf, data, press_count)) {
         return -EFAULT;
     }
 	return 0;
