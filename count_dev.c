@@ -6,6 +6,8 @@
 #include <linux/fs.h>
 #include <linux/device.h>
 #include <linux/cdev.h>
+#include <linux/uaccess.h>
+
 
 //used https://github.com/romanjoe/os-course-labs/blob/master/gpio/chardev.c as a template
 
@@ -22,19 +24,19 @@ static struct class *cd_class; /* global variable for the device class */
 extern unsigned int press_count;
 
 
-static int chardev_open(struct inode *i, struct file *f)
+static int counter_open(struct inode *i, struct file *f)
 {
 	printk(KERN_DEBUG "[chardev] - open() method called\n");
 	return 0;
 }
 
-static int chardev_release(struct inode *i, struct file *f)
+static int counter_release(struct inode *i, struct file *f)
 {
 	printk(KERN_DEBUG "[chardev] - close() method called\n");
 	return 0;
 }
 
-static ssize_t chardev_read(struct file *f, char __user *buf, size_t len, loff_t *off)
+static ssize_t counter_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 {
 	uint8_t data[4];
 	memcpy(data, &press_count ,sizeof(unsigned int));
@@ -44,7 +46,7 @@ static ssize_t chardev_read(struct file *f, char __user *buf, size_t len, loff_t
 	return 0;
 }
 
-static ssize_t chardev_write(struct file *f, const char __user *buf, size_t len, loff_t *off)
+static ssize_t counter_write(struct file *f, const char __user *buf, size_t len, loff_t *off)
 {
 	printk(KERN_DEBUG "[chardev] - write() method called\n");
 	return len;
@@ -86,7 +88,7 @@ static int __init chardev_init(void)
 	}
     
     /* init cdev sctructure */
-	cdev_init(&c_dev, &chardev_fops);
+	cdev_init(&c_dev, &counter_fops);
 	if ((ret = cdev_add(&c_dev, first, 1)) < 0)
 	{
 		device_destroy(cd_class, first);

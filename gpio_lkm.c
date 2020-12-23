@@ -36,11 +36,11 @@ enum state {low, high};
 unsigned int press_count = 0;
 EXPORT_SYMBOL(press_count);
 
-unsigned int irq_num;
-int irq_handler(unsigned int irq, void* dev_id);
+int irq_num;
+irq_handler_t irq_handler(int irq, void* dev_id);
 
-int button_pin = 5;
-int led_pin = 6;
+int button_pin = 15;
+int led_pin = 16;
 int status = 0;
 
 /*
@@ -464,7 +464,7 @@ static int __init gpio_lkm_init(void)
             index++;
         }
     }
-	request_irq(irq_num, irq_handler, IRQF_TRIGGER_RISING, "button press handler", NULL);
+	request_irq(irq_num, (irq_handler_t) irq_handler, IRQF_TRIGGER_RISING, "button press handler", NULL);
     
 	printk("[GPIO_LKM] - Driver initialized\n");
     
@@ -519,16 +519,16 @@ static void __exit gpio_lkm_exit(void)
 	free_irq(irq_num, NULL);
 }
 
-int irq_handler(int irq, void* dev_id) {
+irq_handler_t irq_handler(int irq, void* dev_id) {
     if(press_count < 10){
         press_count++;
     }
-    else if(PRESSES_COUNT == 10){
+    else if(press_count == 10){
        status = 1;
        gpio_set_value(led_pin, 1);
     }
+	printk("Presses count: %d\n", press_count);
     return IRQ_HANDLED;
-}
 }
 
 /* these are stantard macros to mark
