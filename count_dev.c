@@ -33,13 +33,14 @@ static int counter_open(struct inode *i, struct file *f)
 static int counter_release(struct inode *i, struct file *f)
 {
 	printk(KERN_DEBUG "[chardev] - close() method called\n");
-	return 0;
+	return 0;	
 }
 
 static ssize_t counter_read(struct file *f, char __user *buf, size_t len, loff_t *off)
 {
 	uint8_t data[4];
 	memcpy(data, &press_count ,sizeof(unsigned int));
+	printk(KERN_DEBUG "Press count: %d\n", press_count);
 	if (copy_to_user(buf, data, press_count)) {
         return -EFAULT;
     }
@@ -66,15 +67,17 @@ static int __init chardev_init(void)
 	int ret;
 	struct device *dev_ret;
 
-	printk(KERN_DEBUG "[chardev] - init functions called");
+	printk(KERN_DEBUG "[chardev] - init functions called\n");
     /* allocate minor numbers */
 	if ((ret = alloc_chrdev_region(&first, CHARDEV_MINOR, CHARDEV_MINOR_NUM, DEVICE_NAME)) < 0)
 	{
+		printk(KERN_DEBUG "Cannot alloc chrdev\n");
 		return ret;
 	}
     /* create class for device */
 	if (IS_ERR(cd_class = class_create(THIS_MODULE, DEVICE_NAME)))
 	{
+		printk(KERN_DEBUG "Error class creating\n");
 		unregister_chrdev_region(first, 1);
 		return PTR_ERR(cd_class);
 	}
@@ -82,6 +85,7 @@ static int __init chardev_init(void)
     /* create device */
 	if (IS_ERR(dev_ret = device_create(cd_class, NULL, first, NULL, "how_you_like_that_ilon_mask")))
 	{
+		printk(KERN_DEBUG "Cannotdevice create\n");
 		class_destroy(cd_class);
 		unregister_chrdev_region(first, 1);
 		return PTR_ERR(dev_ret);
@@ -91,6 +95,8 @@ static int __init chardev_init(void)
 	cdev_init(&c_dev, &counter_fops);
 	if ((ret = cdev_add(&c_dev, first, 1)) < 0)
 	{
+		printk(KERN_DEBUG "Cannot cdev init\n");
+
 		device_destroy(cd_class, first);
 		class_destroy(cd_class);
 		unregister_chrdev_region(first, 1);
@@ -105,7 +111,7 @@ static void __exit chardev_exit(void)
 	device_destroy(cd_class, first);
 	class_destroy(cd_class);
 	unregister_chrdev_region(first, 1);
-	printk(KERN_INFO "[chardev] - unregistered from kernel");
+	printk(KERN_INFO "[chardev] - unregistered from kernel\n");
 }
 
 module_init(chardev_init);

@@ -37,11 +37,24 @@ unsigned int press_count = 0;
 EXPORT_SYMBOL(press_count);
 
 int irq_num;
-irq_handler_t irq_handler(int irq, void* dev_id);
+irqreturn_t irq_handler(int irq, void* dev_id);
 
-int button_pin = 15;
+int button_pin = 17;
 int led_pin = 16;
 int status = 0;
+
+irqreturn_t irq_handler(int irq, void* dev_id) {
+	printk(KERN_DEBUG "[chardev] - irq occured\n");
+    if(press_count < 10){
+        press_count++;
+    }
+    else if(press_count == 10){
+       status = 1;
+       gpio_set_value(led_pin, 1);
+    }
+	printk("Presses count: %d\n", press_count);
+    return IRQ_HANDLED;
+}
 
 /*
 * struct gpio_lkm_dev - Per gpio pin data structure
@@ -464,7 +477,12 @@ static int __init gpio_lkm_init(void)
             index++;
         }
     }
-	request_irq(irq_num, (irq_handler_t) irq_handler, IRQF_TRIGGER_RISING, "button press handler", NULL);
+	int res = request_irq(irq_num, irq_handler, IRQF_TRIGGER_RISING, "button press handler", NULL);
+	if (res) {
+		printk("[GPIO_LKM] - Error requesting irq\n");
+		return -1;
+	}
+
     
 	printk("[GPIO_LKM] - Driver initialized\n");
     
@@ -519,17 +537,7 @@ static void __exit gpio_lkm_exit(void)
 	free_irq(irq_num, NULL);
 }
 
-irq_handler_t irq_handler(int irq, void* dev_id) {
-    if(press_count < 10){
-        press_count++;
-    }
-    else if(press_count == 10){
-       status = 1;
-       gpio_set_value(led_pin, 1);
-    }
-	printk("Presses count: %d\n", press_count);
-    return IRQ_HANDLED;
-}
+
 
 /* these are stantard macros to mark
  * init and exit functions implemetations
